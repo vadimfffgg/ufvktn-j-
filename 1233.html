@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>GVM Performance | Kia Sorento 2012</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #eaf2e6;
+            color: #1a2c19;
+            padding: 0 12px 30px 12px;
+            opacity: 0;
+            animation: pageFadeIn 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+        }
+
+        @keyframes pageFadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        :root {
+            --khaki-deep: #1f3a1e;
+            --khaki: #3f6540;
+            --khaki-moss: #6f946c;
+            --khaki-light: #b9d7b0;
+            --khaki-soft: #e0f2d9;
+            --card-bg: #ffffff;
+            --text-dark: #142312;
+            --border-light: #d0e3c8;
+            --shadow: 0 8px 20px rgba(40, 70, 30, 0.15);
+            --shadow-hover: 0 12px 25px rgba(40, 70, 30, 0.25);
+        }
+
+        /* Мобильная оптимизация */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr !important;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .weather-card {
+                width: 100%;
+            }
+            .quick-menu {
+                order: -1;
+                margin-bottom: 10px;
+            }
+            .book-view {
+                flex-direction: column !important;
+            }
+            .book-sidebar {
+                width: 100% !important;
+                border-right: none !important;
+                border-bottom: 2px solid var(--border-light);
+                padding-bottom: 16px;
+            }
+        }
+
+        /* Анимации */
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pageFlip {
+            0% { transform: rotateY(-10deg); opacity: 0.8; }
+            100% { transform: rotateY(0); opacity: 1; }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+            animation: slideDown 0.6s ease;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--khaki-deep);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo i {
+            animation: pulse 2s infinite;
+        }
+
+        .weather-card {
+            background: var(--card-bg);
+            padding: 10px 18px;
+            border-radius: 40px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s;
+            animation: slideDown 0.8s ease;
+        }
+
+        .weather-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Карточки */
+        .card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            margin-bottom: 16px;
+            animation: scaleIn 0.5s ease;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--khaki-deep);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Поля авто */
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 8px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .field-row input, .field-row select {
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 2px solid var(--border-light);
+            font-weight: 500;
+            width: 140px;
+            max-width: 100%;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .field-row input:focus, .field-row select:focus {
+            border-color: var(--khaki);
+            outline: none;
+            transform: scale(1.02);
+        }
+
+        /* Кнопки */
+        .btn {
+            background: var(--khaki);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 1rem;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        .btn:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(40, 40);
+                opacity: 0;
+            }
+        }
+
+        .btn:active {
+            background: var(--khaki-deep);
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--khaki-light);
+            color: var(--khaki-deep);
+        }
+
+        .btn-secondary:active {
+            background: var(--khaki-soft);
+        }
+
+        /* Быстрое меню */
+        .quick-menu {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            animation: slideDown 0.7s ease;
+        }
+
+        .quick-menu-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--khaki-deep);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quick-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--khaki-soft);
+            border: 2px solid var(--border-light);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+            animation: slideUp 0.5s ease;
+            animation-fill-mode: both;
+        }
+
+        .quick-menu-item:nth-child(1) { animation-delay: 0.1s; }
+        .quick-menu-item:nth-child(2) { animation-delay: 0.15s; }
+        .quick-menu-item:nth-child(3) { animation-delay: 0.2s; }
+        .quick-menu-item:nth-child(4) { animation-delay: 0.25s; }
+        .quick-menu-item:nth-child(5) { animation-delay: 0.3s; }
+        .quick-menu-item:nth-child(6) { animation-delay: 0.35s; }
+        .quick-menu-item:nth-child(7) { animation-delay: 0.4s; }
+
+        .quick-menu-item:hover {
+            background: var(--khaki-light);
+            transform: translateX(5px);
+            border-color: var(--khaki);
+        }
+
+        .quick-menu-item:active {
+            transform: scale(0.98);
+            background: var(--khaki-moss);
+            color: white;
+        }
+
+        .quick-menu-item:active i {
+            color: white;
+        }
+
+        .quick-menu-item i {
+            width: 24px;
+            color: var(--khaki);
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        /* Прогресс бары */
+        .progress-bg {
+            height: 8px;
+            background: var(--khaki-light);
+            border-radius: 20px;
+            margin: 12px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--khaki);
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        /* Панели */
+        .panel {
+            display: none;
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            scroll-margin-top: 20px;
+        }
+
+        .panel.active {
+            display: block;
+            animation: slideUp 0.5s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            animation: scaleIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid var(--border-light);
+            border-radius: 30px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .modal-content input:focus, .modal-content textarea:focus, .modal-content select:focus {
+            border-color: var(--khaki);
+            outline: none;
+            transform: scale(1.02);
+        }
+
+        .photo-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .photo-thumb {
+            width: 70px;
+            height: 70px;
+            background: var(--khaki-soft);
+            border-radius: 16px;
+            overflow: hidden;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: var(--khaki-soft);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            animation: scaleIn 0.5s ease;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--khaki-deep);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .badge.high { background: #4caf7f; color: white; }
+        .badge.low { background: #cf6f5e; color: white; }
+        .badge.medium { background: #ffb74d; color: white; }
+
+        /* Стили для книги в руководстве */
+        .book-view {
+            display: flex;
+            gap: 24px;
+            background: #f5f5dc;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            animation: pageFlip 0.6s ease;
+        }
+
+        .book-sidebar {
+            width: 200px;
+            border-right: 2px solid var(--khaki-deep);
+            padding-right: 16px;
+        }
+
+        .book-chapter {
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: var(--khaki-soft);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            border: 1px solid var(--border-light);
+        }
+
+        .book-chapter.active {
+            background: var(--khaki);
+            color: white;
+            border-color: var(--khaki-deep);
+            transform: translateX(5px);
+        }
+
+        .book-chapter:hover {
+            background: var(--khaki-light);
+        }
+
+        .book-content {
+            flex: 1;
+            min-height: 300px;
+            background: #fff9e6;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.03);
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #2c3e2c;
+            white-space: pre-line;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .book-content h4 {
+            color: var(--khaki-deep);
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            border-bottom: 1px dashed var(--khaki-light);
+            padding-bottom: 8px;
+        }
+
+        #mileageChart {
+            animation: fadeIn 0.8s ease;
+            max-height: 150px;
+            width: 100%;
+        }
+
+        #financeChart {
+            animation: fadeIn 0.8s ease;
+            max-height: 250px;
+            width: 100%;
+        }
+
+        .expense-item {
+            background: var(--khaki-soft);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .part-item {
+            background: var(--khaki-soft);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 8px;
+            animation: scaleIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Хедер -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-gem"></i> GVM Performance 
+        </div>
+        <div class="weather-card" id="weatherWidget">
+            <i class="fas fa-cloud-sun" id="weatherIcon"></i>
+            <span id="weatherTemp">--°C</span>
+            <span id="weatherCity">Определение...</span>
+            <span id="weatherAdvice"></span>
+        </div>
+    </header>
+
+    <!-- Основная сетка -->
+    <div class="dashboard">
+        <!-- Левая колонка - Авто -->
+        <div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-car"></i> Kia Sorento 2012</div>
+                <div class="field-row">
+                    <span>Марка/Модель</span>
+                    <input type="text" id="carBrand" value="Kia Sorento 2012">
+                </div>
+                <div class="field-row">
+                    <span>VIN</span>
+                    <input type="text" id="carVin" placeholder="Введите VIN">
+                </div>
+                <div class="field-row">
+                    <span>Госномер</span>
+                    <input type="text" id="carPlate" placeholder="А123АА">
+                </div>
+                <div class="field-row">
+                    <span>Двигатель</span>
+                    <input type="text" id="carEngine" value="2.4L 175 л.с." readonly style="background:#eef2e6;">
+                </div>
+                <div class="field-row">
+                    <span>Пробег, км</span>
+                    <input type="number" id="carMileage" value="145000">
+                </div>
+                <div class="field-row">
+                    <span>Посл. замена масла</span>
+                    <input type="number" id="lastOil" value="140000">
+                </div>
+                <div class="field-row">
+                    <span>Интервал масла</span>
+                    <input type="number" id="oilInterval" value="7500">
+                </div>
+                <div class="field-row">
+                    <span>Интервал фильтров</span>
+                    <input type="number" id="filterInterval" value="15000">
+                </div>
+                <div class="field-row">
+                    <span>Сезон шин</span>
+                    <select id="tireSeason">
+                        <option value="winter">Зимние</option>
+                        <option value="summer">Летние</option>
+                    </select>
+                </div>
+                <button class="btn" id="saveCarBtn">💾 Сохранить</button>
+            </div>
+        </div>
+
+        <!-- Центр - Виджеты -->
+        <div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-oil-can"></i> Масло (2.4L GDI)</div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Осталось:</span>
+                    <span id="oilLeft">-- км</span>
+                </div>
+                <div class="progress-bg">
+                    <div class="progress-fill" id="oilProgress"></div>
+                </div>
+                <button class="btn" id="oilChangeBtn">✔ Заменил масло</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fas fa-filter"></i> Фильтры</div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Осталось до замены:</span>
+                    <span id="filterLeft">-- км</span>
+                </div>
+                <div class="progress-bg">
+                    <div class="progress-fill" id="filterProgress"></div>
+                </div>
+                <button class="btn" id="filterChangeBtn">✔ Заменил фильтры</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fas fa-chart-line"></i> Анализ пробега</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div>За месяц</div>
+                        <div class="stat-value" id="monthlyMileage">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div>За год</div>
+                        <div class="stat-value" id="yearlyMileage">0</div>
+                    </div>
+                </div>
+                <canvas id="mileageChart" style="height: 150px;"></canvas>
+                <div id="mileageAnalysis" style="margin-top: 10px; font-size: 0.9rem;"></div>
+            </div>
+        </div>
+
+        <!-- Правая колонка - Быстрое меню -->
+        <div>
+            <div class="quick-menu">
+                <div class="quick-menu-title">
+                    <i class="fas fa-bolt"></i> Быстрое меню
+                </div>
+                <div class="quick-menu-list">
+                    <div class="quick-menu-item" data-panel="docs">
+                        <i class="fas fa-lock"></i> Документы
+                    </div>
+                    <div class="quick-menu-item" data-panel="finances">
+                        <i class="fas fa-chart-pie"></i> Финансы
+                    </div>
+                    <div class="quick-menu-item" data-panel="washes">
+                        <i class="fas fa-spray-can"></i> Мойки
+                    </div>
+                    <div class="quick-menu-item" data-panel="trips">
+                        <i class="fas fa-route"></i> Поездки
+                    </div>
+                    <div class="quick-menu-item" data-panel="parts">
+                        <i class="fas fa-tools"></i> Запчасти
+                    </div>
+                    <div class="quick-menu-item" data-panel="periods">
+                        <i class="fas fa-calendar-alt"></i> Периоды
+                    </div>
+                    <div class="quick-menu-item" data-panel="manual">
+                        <i class="fas fa-book"></i> Руководство
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-clock"></i> Сроки документов</div>
+                <div id="expiringDocsList">Загрузка...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панели -->
+    <div id="docs-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">📁 Документы</h3>
+        <button class="btn btn-secondary" id="lockDocs" style="margin-bottom: 16px;">🔒 Заблокировать</button>
+        <div id="docsLocked">
+            <p>Введите PIN:</p>
+            <input type="password" id="docPin" maxlength="4" placeholder="****" style="width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--border-light); margin: 10px 0;">
+            <button class="btn" id="unlockDocs">Разблокировать</button>
+            <div style="margin-top: 20px;">
+                <p>Сменить PIN:</p>
+                <input type="password" id="newPin1" maxlength="4" placeholder="новый PIN" style="width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--border-light); margin: 5px 0;">
+                <input type="password" id="newPin2" maxlength="4" placeholder="повторите" style="width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--border-light); margin: 5px 0;">
+                <button class="btn" id="changePinBtn">Сменить</button>
+            </div>
+        </div>
+        <div id="docsUnlocked" style="display: none;">
+            <div class="field-row">
+                <span>СТС</span>
+                <input type="text" id="docSts" value="99УУ123456">
+            </div>
+            <div class="field-row">
+                <span>До</span>
+                <input type="date" id="docStsDate">
+            </div>
+            <div class="field-row">
+                <span>Права</span>
+                <input type="text" id="docLicense" value="7712345678">
+            </div>
+            <div class="field-row">
+                <span>До</span>
+                <input type="date" id="docLicenseDate">
+            </div>
+            <div class="field-row">
+                <span>Страховка</span>
+                <input type="text" id="docInsurance" value="ААА123456">
+            </div>
+            <div class="field-row">
+                <span>До</span>
+                <input type="date" id="docInsuranceDate">
+            </div>
+            <button class="btn" id="saveDocs">Сохранить</button>
+        </div>
+    </div>
+
+    <div id="finances-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">💰 Финансы</h3>
+        <canvas id="financeChart" style="height: 250px;"></canvas>
+        <button class="btn" id="showAddExpenseModal">+ Добавить расход</button>
+        <div id="expenseList" style="margin-top: 16px;"></div>
+    </div>
+
+    <div id="washes-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">🧼 Мойки</h3>
+        <button class="btn" id="showWashModal">+ Новая мойка</button>
+        <div id="washesGrid" style="margin-top: 16px;"></div>
+    </div>
+
+    <div id="trips-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">🗺️ Поездки</h3>
+        <button class="btn" id="showTripModal">+ Новая поездка</button>
+        <div id="tripsGrid" style="margin-top: 16px;"></div>
+    </div>
+
+    <div id="parts-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">🔧 Запчасти</h3>
+        <button class="btn" id="showPartModal">+ Замена</button>
+        <div id="partsList" style="margin-top: 16px;"></div>
+    </div>
+
+    <div id="periods-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">📅 Периоды владения</h3>
+        <button class="btn" id="showPeriodModal">+ Добавить период</button>
+        <div id="periodsList" style="margin-top: 16px;"></div>
+        <div class="card" style="margin-top: 16px;">
+            <h4>Анализ пробега по периодам</h4>
+            <div id="periodAnalysis"></div>
+        </div>
+    </div>
+
+    <div id="manual-panel" class="panel">
+        <h3 style="margin-bottom: 16px;">📘 Руководство Kia Sorento 2012</h3>
+        <div class="book-view">
+            <div class="book-sidebar">
+                <div class="book-chapter active" data-chapter="engine">🏎️ Двигатель 2.4L</div>
+                <div class="book-chapter" data-chapter="oil">🛢️ Масло и фильтры</div>
+                <div class="book-chapter" data-chapter="warmup">🌡️ Прогрев</div>
+                <div class="book-chapter" data-chapter="transmission">🔄 Трансмиссия</div>
+                <div class="book-chapter" data-chapter="suspension">🔧 Подвеска</div>
+                <div class="book-chapter" data-chapter="tires">🛞 Шины</div>
+                <div class="book-chapter" data-chapter="brakes">🛑 Тормоза</div>
+                <div class="book-chapter" data-chapter="cooling">❄️ Охлаждение</div>
+                <div class="book-chapter" data-chapter="electrics">⚡ Электрика</div>
+                <div class="book-chapter" data-chapter="timing">⏱️ Ремень ГРМ</div>
+            </div>
+            <div class="book-content" id="manualBookContent">
+                <!-- Контент будет подставляться из JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалки -->
+    <div class="modal" id="expenseModal">
+        <div class="modal-content">
+            <h3>💰 Добавить расход</h3>
+            <select id="expenseType">
+                <option value="fuel">Топливо</option>
+                <option value="repair">Ремонт</option>
+                <option value="wash">Мойка</option>
+                <option value="insurance">Страховка</option>
+                <option value="other">Другое</option>
+            </select>
+            <input type="text" id="expenseDesc" placeholder="Описание">
+            <input type="number" id="expenseAmount" placeholder="Сумма">
+            <input type="number" id="expenseMileage" placeholder="Пробег">
+            <button class="btn" id="saveExpense">Сохранить</button>
+            <button class="btn btn-secondary" id="cancelExpense">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal" id="washModal">
+        <div class="modal-content">
+            <h3>🧽 Новая мойка</h3>
+            <input type="date" id="washDate">
+            <input type="text" id="washChem" placeholder="Химия (шампунь, воск)">
+            <textarea id="washComment" placeholder="Комментарий"></textarea>
+            <div class="photo-grid" id="washPhotoPreview"></div>
+            <input type="file" id="washFileInput" multiple accept="image/*" style="display: none;">
+            <button class="btn" id="addWashPhotosBtn">📸 Выбрать фото</button>
+            <button class="btn" id="saveWash">Сохранить</button>
+            <button class="btn btn-secondary" id="cancelWash">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal" id="tripModal">
+        <div class="modal-content">
+            <h3>🚗 Новая поездка</h3>
+            <input type="date" id="tripDate">
+            <input type="time" id="tripTime">
+            <input type="text" id="tripFrom" placeholder="Откуда">
+            <input type="text" id="tripTo" placeholder="Куда">
+            <input type="number" id="tripDistance" placeholder="Пробег, км">
+            <input type="number" id="tripDuration" placeholder="Время (мин)">
+            <button class="btn" id="saveTrip">Сохранить</button>
+            <button class="btn btn-secondary" id="cancelTrip">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal" id="partModal">
+        <div class="modal-content">
+            <h3>🔧 Замена запчасти</h3>
+            <input type="text" id="partName" placeholder="Название (колодки, фильтр, ремень)">
+            <input type="number" id="partMileage" placeholder="Пробег при замене">
+            <input type="date" id="partDate">
+            <button class="btn" id="savePart">Сохранить</button>
+            <button class="btn btn-secondary" id="cancelPart">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal" id="periodModal">
+        <div class="modal-content">
+            <h3>📅 Период владения</h3>
+            <input type="text" id="periodName" placeholder="Название (например, 2025)">
+            <input type="date" id="periodStart">
+            <input type="date" id="periodEnd">
+            <input type="number" id="periodMileage" placeholder="Пробег за период">
+            <button class="btn" id="savePeriod">Сохранить</button>
+            <button class="btn btn-secondary" id="cancelPeriod">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ========== УВЕДОМЛЕНИЯ ==========
+            function showToast(message, type = 'success') {
+                alert(message);
+            }
+
+            // ========== ДАННЫЕ ==========
+            let carData = JSON.parse(localStorage.getItem('carData')) || {
+                brand: "Kia Sorento 2012",
+                vin: "",
+                plate: "",
+                engine: "2.4L 193 л.с.",
+                mileage: 145000,
+                lastOil: 140000,
+                oilInterval: 7500,
+                filterInterval: 15000,
+                lastFilter: 140000,
+                tireSeason: "winter"
+            };
+
+            let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+            let washes = JSON.parse(localStorage.getItem('washes')) || [];
+            let trips = JSON.parse(localStorage.getItem('trips')) || [];
+            let parts = JSON.parse(localStorage.getItem('parts')) || [];
+            let periods = JSON.parse(localStorage.getItem('periods')) || [];
+
+            let docs = JSON.parse(localStorage.getItem('docs')) || {
+                sts: "99УУ123456",
+                stsDate: "2026-05-12",
+                license: "7712345678",
+                licenseDate: "2028-09-08",
+                insurance: "ААА123456",
+                insuranceDate: "2026-01-01"
+            };
+
+            let userPin = localStorage.getItem('carPin') || "1234";
+            let mileageChart = null;
+            let financeChart = null;
+
+            function saveAll() {
+                localStorage.setItem('carData', JSON.stringify(carData));
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                localStorage.setItem('washes', JSON.stringify(washes));
+                localStorage.setItem('trips', JSON.stringify(trips));
+                localStorage.setItem('parts', JSON.stringify(parts));
+                localStorage.setItem('docs', JSON.stringify(docs));
+                localStorage.setItem('periods', JSON.stringify(periods));
+            }
+
+            // ========== ЗАПОЛНЕНИЕ ПОЛЕЙ ==========
+            function fillCarFields() {
+                document.getElementById('carBrand').value = carData.brand;
+                document.getElementById('carVin').value = carData.vin;
+                document.getElementById('carPlate').value = carData.plate;
+                document.getElementById('carEngine').value = carData.engine;
+                document.getElementById('carMileage').value = carData.mileage;
+                document.getElementById('lastOil').value = carData.lastOil;
+                document.getElementById('oilInterval').value = carData.oilInterval;
+                document.getElementById('filterInterval').value = carData.filterInterval;
+                document.getElementById('tireSeason').value = carData.tireSeason;
+            }
+            fillCarFields();
+
+            // ========== СОХРАНЕНИЕ АВТО ==========
+            document.getElementById('saveCarBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                carData.brand = document.getElementById('carBrand').value;
+                carData.vin = document.getElementById('carVin').value;
+                carData.plate = document.getElementById('carPlate').value;
+                carData.mileage = parseInt(document.getElementById('carMileage').value) || 145000;
+                carData.lastOil = parseInt(document.getElementById('lastOil').value) || 140000;
+                carData.oilInterval = parseInt(document.getElementById('oilInterval').value) || 7500;
+                carData.filterInterval = parseInt(document.getElementById('filterInterval').value) || 15000;
+                carData.tireSeason = document.getElementById('tireSeason').value;
+                saveAll();
+                updateMaintenance();
+                showToast('✅ Данные сохранены');
+            });
+
+            // ========== ОБНОВЛЕНИЕ ТО ==========
+            function updateMaintenance() {
+                let oilSince = carData.mileage - carData.lastOil;
+                let oilLeft = Math.max(0, carData.oilInterval - oilSince);
+                document.getElementById('oilLeft').innerText = oilLeft + ' км';
+                document.getElementById('oilProgress').style.width = Math.min(100, (oilSince/carData.oilInterval)*100) + '%';
+
+                let filterSince = carData.mileage - (carData.lastFilter || carData.lastOil);
+                let filterLeft = Math.max(0, carData.filterInterval - filterSince);
+                document.getElementById('filterLeft').innerText = filterLeft + ' км';
+                document.getElementById('filterProgress').style.width = Math.min(100, (filterSince/carData.filterInterval)*100) + '%';
+            }
+
+            document.getElementById('oilChangeBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                carData.lastOil = carData.mileage;
+                document.getElementById('lastOil').value = carData.mileage;
+                saveAll();
+                updateMaintenance();
+                showToast('🛢️ Замена масла');
+            });
+
+            document.getElementById('filterChangeBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                carData.lastFilter = carData.mileage;
+                saveAll();
+                updateMaintenance();
+                showToast('🔧 Замена фильтров');
+            });
+
+            // ========== ГЕОЛОКАЦИЯ ==========
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                let city = data.address?.city || data.address?.town || data.address?.village || 'Ваш город';
+                                document.getElementById('weatherCity').innerText = city;
+                                let temp = -3; // симуляция
+                                document.getElementById('weatherTemp').innerText = temp + '°C';
+                                document.getElementById('weatherAdvice').innerText = temp < 0 ? '❄️ Мойка не рекомендуется' : '☀️ Можно мыть';
+                            })
+                            .catch(() => {
+                                document.getElementById('weatherCity').innerText = 'Москва';
+                            });
+                    },
+                    function() {
+                        document.getElementById('weatherCity').innerText = 'Москва';
+                    }
+                );
+            }
+
+            // ========== ПАНЕЛИ С АВТОСКРОЛЛОМ ==========
+            document.querySelectorAll('.quick-menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    let panelId = this.dataset.panel;
+                    
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    
+                    let panel = document.getElementById(panelId + '-panel');
+                    panel.classList.add('active');
+                    
+                    panel.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start',
+                        inline: 'nearest'
+                    });
+                });
+            });
+
+            // ========== ДОКУМЕНТЫ ==========
+            document.getElementById('unlockDocs').addEventListener('click', function(e) {
+                e.preventDefault();
+                let entered = document.getElementById('docPin').value;
+                if (entered === userPin) {
+                    document.getElementById('docsLocked').style.display = 'none';
+                    document.getElementById('docsUnlocked').style.display = 'block';
+                    document.getElementById('docStsDate').value = docs.stsDate;
+                    document.getElementById('docLicenseDate').value = docs.licenseDate;
+                    document.getElementById('docInsuranceDate').value = docs.insuranceDate;
+                } else {
+                    alert('Неверный PIN: ' + userPin);
+                }
+            });
+
+            document.getElementById('lockDocs').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('docsLocked').style.display = 'block';
+                document.getElementById('docsUnlocked').style.display = 'none';
+            });
+
+            document.getElementById('changePinBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                let pin1 = document.getElementById('newPin1').value;
+                let pin2 = document.getElementById('newPin2').value;
+                if (pin1.length === 4 && pin1 === pin2) {
+                    userPin = pin1;
+                    localStorage.setItem('carPin', userPin);
+                    alert('PIN изменен');
+                } else {
+                    alert('Ошибка');
+                }
+            });
+
+            document.getElementById('saveDocs').addEventListener('click', function(e) {
+                e.preventDefault();
+                docs.stsDate = document.getElementById('docStsDate').value;
+                docs.licenseDate = document.getElementById('docLicenseDate').value;
+                docs.insuranceDate = document.getElementById('docInsuranceDate').value;
+                saveAll();
+                alert('Документы сохранены');
+            });
+
+            // ========== ПОЕЗДКИ ==========
+            function renderTrips() {
+                let grid = document.getElementById('tripsGrid');
+                if (!grid) return;
+                grid.innerHTML = trips.map((t, i) => {
+                    let dist = parseInt(t.distance) || 0;
+                    let analysis = dist > 100 ? '🔴 Дальняя' : dist > 30 ? '🟡 Средняя' : '🟢 Короткая';
+                    return `
+                        <div style="background: var(--khaki-soft); border-radius: 20px; padding: 16px; margin-bottom: 10px; animation: scaleIn 0.3s ease;">
+                            <div><strong>${t.date} ${t.time}</strong></div>
+                            <div>${t.from || '?'} → ${t.to || '?'}</div>
+                            <div>📏 ${dist} км | ${analysis}</div>
+                            <button class="btn btn-secondary" onclick="deleteTrip(${i})" style="margin-top: 8px;">Удалить</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            window.deleteTrip = function(i) {
+                trips.splice(i, 1);
+                saveAll();
+                renderTrips();
+                updateMileageStats();
+            };
+
+            document.getElementById('showTripModal').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('tripModal').classList.add('active');
+                document.getElementById('tripDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('tripTime').value = '12:00';
+            });
+
+            document.getElementById('cancelTrip').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('tripModal').classList.remove('active');
+            });
+
+            document.getElementById('saveTrip').addEventListener('click', function(e) {
+                e.preventDefault();
+                trips.push({
+                    date: document.getElementById('tripDate').value,
+                    time: document.getElementById('tripTime').value,
+                    from: document.getElementById('tripFrom').value,
+                    to: document.getElementById('tripTo').value,
+                    distance: document.getElementById('tripDistance').value,
+                    duration: document.getElementById('tripDuration').value
+                });
+                saveAll();
+                renderTrips();
+                updateMileageStats();
+                document.getElementById('tripModal').classList.remove('active');
+                alert('Поездка добавлена');
+            });
+
+            // ========== СТАТИСТИКА И ГРАФИК ==========
+            function updateMileageStats() {
+                let now = new Date();
+                let monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                let yearStart = new Date(now.getFullYear(), 0, 1);
+                
+                let monthly = trips.filter(t => new Date(t.date) >= monthStart).reduce((s, t) => s + (parseInt(t.distance) || 0), 0);
+                let yearly = trips.filter(t => new Date(t.date) >= yearStart).reduce((s, t) => s + (parseInt(t.distance) || 0), 0);
+                
+                document.getElementById('monthlyMileage').innerText = monthly;
+                document.getElementById('yearlyMileage').innerText = yearly;
+
+                let avgDaily = monthly / 30;
+                let analysis = document.getElementById('mileageAnalysis');
+                if (avgDaily > 50) {
+                    analysis.innerHTML = '📊 Высокая активность: более 50 км/день';
+                } else if (avgDaily > 20) {
+                    analysis.innerHTML = '📊 Средняя активность: 20-50 км/день';
+                } else {
+                    analysis.innerHTML = '📊 Низкая активность: менее 20 км/день';
+                }
+
+                let months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+                let monthData = Array(12).fill(0);
+                
+                trips.forEach(t => {
+                    let d = new Date(t.date);
+                    if (d.getFullYear() === now.getFullYear()) {
+                        monthData[d.getMonth()] += parseInt(t.distance) || 0;
+                    }
+                });
+
+                let ctx = document.getElementById('mileageChart').getContext('2d');
+                
+                if (mileageChart) {
+                    mileageChart.destroy();
+                }
+
+                mileageChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Пробег за месяц, км',
+                            data: monthData,
+                            backgroundColor: '#3f6540',
+                            borderRadius: 8,
+                            barPercentage: 0.7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeInOutQuad'
+                        }
+                    }
+                });
+            }
+
+            // ========== МОЙКИ ==========
+            function renderWashes() {
+                let grid = document.getElementById('washesGrid');
+                if (!grid) return;
+                grid.innerHTML = washes.map((w, i) => `
+                    <div style="background: var(--khaki-soft); border-radius: 20px; padding: 16px; margin-bottom: 10px; animation: scaleIn 0.3s ease;">
+                        <div><strong>${w.date}</strong></div>
+                        <div>🧴 Химия: ${w.chem || '—'}</div>
+                        <div>💬 ${w.comment || ''}</div>
+                        <button class="btn btn-secondary" onclick="deleteWash(${i})">Удалить</button>
+                    </div>
+                `).join('');
+            }
+
+            window.deleteWash = function(i) {
+                washes.splice(i, 1);
+                saveAll();
+                renderWashes();
+            };
+
+            document.getElementById('showWashModal').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('washModal').classList.add('active');
+                document.getElementById('washDate').value = new Date().toISOString().split('T')[0];
+            });
+
+            document.getElementById('cancelWash').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('washModal').classList.remove('active');
+            });
+
+            document.getElementById('addWashPhotosBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('washFileInput').click();
+            });
+
+            document.getElementById('washFileInput').addEventListener('change', function(e) {
+                let preview = document.getElementById('washPhotoPreview');
+                preview.innerHTML = '';
+                Array.from(e.target.files).forEach(file => {
+                    let reader = new FileReader();
+                    reader.onload = ev => {
+                        let img = document.createElement('img');
+                        img.src = ev.target.result;
+                        img.style.width = '70px';
+                        img.style.height = '70px';
+                        img.style.borderRadius = '16px';
+                        img.style.animation = 'scaleIn 0.3s ease';
+                        preview.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            document.getElementById('saveWash').addEventListener('click', function(e) {
+                e.preventDefault();
+                let photos = [];
+                document.querySelectorAll('#washPhotoPreview img').forEach(img => photos.push(img.src));
+                washes.push({
+                    date: document.getElementById('washDate').value,
+                    chem: document.getElementById('washChem').value,
+                    comment: document.getElementById('washComment').value,
+                    photos: photos
+                });
+                saveAll();
+                renderWashes();
+                document.getElementById('washModal').classList.remove('active');
+                alert('Мойка сохранена');
+            });
+
+            // ========== ЗАПЧАСТИ ==========
+            function renderParts() {
+                let list = document.getElementById('partsList');
+                if (!list) return;
+                list.innerHTML = parts.map((p, i) => `
+                    <div class="part-item">
+                        <div><strong>${p.name}</strong></div>
+                        <div>📅 ${p.date} | 🔧 Пробег: ${p.mileage} км</div>
+                        <button class="btn btn-secondary" onclick="deletePart(${i})" style="margin-top: 8px;">Удалить</button>
+                    </div>
+                `).join('');
+            }
+
+            window.deletePart = function(i) {
+                parts.splice(i, 1);
+                saveAll();
+                renderParts();
+            };
+
+            document.getElementById('showPartModal').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('partModal').classList.add('active');
+                document.getElementById('partDate').value = new Date().toISOString().split('T')[0];
+            });
+
+            document.getElementById('cancelPart').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('partModal').classList.remove('active');
+            });
+
+            document.getElementById('savePart').addEventListener('click', function(e) {
+                e.preventDefault();
+                parts.push({
+                    name: document.getElementById('partName').value,
+                    mileage: parseInt(document.getElementById('partMileage').value),
+                    date: document.getElementById('partDate').value
+                });
+                saveAll();
+                renderParts();
+                document.getElementById('partModal').classList.remove('active');
+                alert('Запчасть добавлена');
+            });
+
+            // ========== ПЕРИОДЫ ==========
+            function renderPeriods() {
+                let list = document.getElementById('periodsList');
+                let analysis = document.getElementById('periodAnalysis');
+                if (!list) return;
+                
+                list.innerHTML = periods.map((p, i) => {
+                    let start = new Date(p.start);
+                    let end = new Date(p.end);
+                    let months = Math.ceil((end - start) / (30 * 24 * 60 * 60 * 1000)) || 1;
+                    let avgPerMonth = Math.round(p.mileage / months);
+                    
+                    return `
+                        <div style="background: var(--khaki-soft); border-radius: 20px; padding: 16px; margin-bottom: 10px; animation: scaleIn 0.3s ease;">
+                            <div><strong>${p.name}</strong></div>
+                            <div>${p.start} - ${p.end}</div>
+                            <div>📊 Пробег: ${p.mileage} км</div>
+                            <div>📈 Средний/мес: ${avgPerMonth} км</div>
+                            <button class="btn btn-secondary" onclick="deletePeriod(${i})">Удалить</button>
+                        </div>
+                    `;
+                }).join('');
+
+                if (periods.length > 0) {
+                    let total = periods.reduce((s, p) => s + p.mileage, 0);
+                    let totalMonths = periods.reduce((s, p) => {
+                        let start = new Date(p.start);
+                        let end = new Date(p.end);
+                        return s + Math.ceil((end - start) / (30 * 24 * 60 * 60 * 1000));
+                    }, 0);
+                    let avg = Math.round(total / totalMonths);
+                    
+                    analysis.innerHTML = `
+                        <div class="stat-card">Общий пробег: ${total} км</div>
+                        <div class="stat-card">Средний/мес: ${avg} км</div>
+                    `;
+                }
+            }
+
+            window.deletePeriod = function(i) {
+                periods.splice(i, 1);
+                saveAll();
+                renderPeriods();
+            };
+
+            document.getElementById('showPeriodModal').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('periodModal').classList.add('active');
+                document.getElementById('periodStart').value = new Date().toISOString().split('T')[0];
+                document.getElementById('periodEnd').value = new Date().toISOString().split('T')[0];
+            });
+
+            document.getElementById('cancelPeriod').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('periodModal').classList.remove('active');
+            });
+
+            document.getElementById('savePeriod').addEventListener('click', function(e) {
+                e.preventDefault();
+                periods.push({
+                    name: document.getElementById('periodName').value,
+                    start: document.getElementById('periodStart').value,
+                    end: document.getElementById('periodEnd').value,
+                    mileage: parseInt(document.getElementById('periodMileage').value) || 0
+                });
+                saveAll();
+                renderPeriods();
+                document.getElementById('periodModal').classList.remove('active');
+                alert('Период добавлен');
+            });
+
+            // ========== РУКОВОДСТВО ДЛЯ KIA SORENTO 2012 ==========
+            const manualChapters = {
+                engine: `📖 **Двигатель Kia Sorento 2.4L GDI (175 л.с.)**
+
+**Основные характеристики:**
+• Модель двигателя: G4KE (Theta II)
+• Объем: 2.4 литра
+• Мощность: 175 л.с. при 6000 об/мин
+• Крутящий момент: 228 Нм при 4250 об/мин
+• Тип: бензиновый, рядный, 4-цилиндровый
+• Система питания: распределенный впрыск (MPI) или непосредственный (GDI)
+
+**Регламент обслуживания:**
+• Моторное масло: замена каждые 7500-10000 км
+• Масло: 5W-30, 5W-40 (API SM/SN, ILSAC GF-4/5)
+• Объем масла с фильтром: 5.2 литра
+• Свечи зажигания: иридиевые, замена каждые 60000 км
+• Воздушный фильтр: каждые 15000-20000 км
+• Топливный фильтр: каждые 60000 км
+
+**Особенности:**
+• Двигатель чувствителен к качеству масла
+• Цепь ГРМ (не ремень!) - ресурс 150-200 тыс. км
+• Фазорегуляторы на впуске и выпуске (CVVT)
+• Рекомендуется промывка форсунок каждые 50000 км
+
+**Частые проблемы:**
+• Растяжение цепи ГРМ (стук при запуске)
+• Залегание маслосъемных колец (масложор)
+• Шум гидрокомпенсаторов (нерегулируемые)
+• Отказ катушек зажигания
+
+**Диагностика:**
+• Компьютерная диагностика каждые 15000 км
+• Проверка компрессии: норма 12-14 бар
+• Проверка давления масла: не менее 1.0 бар на ХХ`,
+
+                oil: `📖 **Масло и фильтры для Kia Sorento 2.4L**
+
+**Моторное масло:**
+• Допуски: API SM/SN, ILSAC GF-4/5, ACEA A5/B5
+• Вязкость: 5W-30 (всесезон), 5W-40 (для жаркого климата или больших пробегов)
+• Объем с фильтром: 5.2 литра
+• Интервал замены: 7500 км (рекомендуемый), 10000 км (максимальный)
+
+**Рекомендуемые масла:**
+• Оригинал: Kia/Hyundai 5W-30 Premium (05100-00451)
+• Аналоги: Mobil 1 ESP 5W-30, Shell Helix Ultra 5W-30, Liqui Moly Special Tec AA 5W-30, Castrol Magnatec 5W-30
+
+**Масляный фильтр:**
+• Оригинал: 26300-35503
+• Аналоги: Mann W811/80, Bosch 0451103309, Fram PH9688
+• Замена: при каждой замене масла
+
+**Воздушный фильтр:**
+• Оригинал: 28113-2P000
+• Замена: каждые 15000-20000 км
+• Проверка: при каждом ТО
+
+**Салонный фильтр:**
+• Оригинал: 97133-2P000
+• Замена: каждые 15000 км (или чаще при запыленности)
+• Угольный фильтр: 97133-2P100
+
+**Топливный фильтр:**
+• Для MPI: встроен в модуль бензонасоса, замена каждые 60000 км
+• Для GDI: отдельный фильтр высокого давления, ресурс 60000-80000 км
+
+**Проверка уровня масла:**
+• На прогретом двигателе (через 5 минут после остановки)
+• На ровной поверхности
+• Уровень между MIN и MAX
+• Доливка только тем же маслом`,
+
+                warmup: `📖 **Прогрев двигателя Kia Sorento 2.4L**
+
+**Особенности двигателя Theta II:**
+• Алюминиевый блок цилиндров
+• Термостат открывается при 82-85°C
+• Датчик температуры ОЖ влияет на состав смеси
+
+**Общие рекомендации:**
+Современные двигатели не требуют длительного прогрева на месте. Оптимально - начинать движение через 1-2 минуты после пуска, избегая высоких оборотов до достижения рабочей температуры (90°C).
+
+**По сезонам:**
+
+❄️ **Зима (ниже -5°C):**
+• Прогрев на месте: 3-5 минут
+• Первые 5-7 км двигаться в щадящем режиме
+• Не превышать 2500-3000 об/мин до прогрева
+• Включить обогрев стекол и зеркал сразу
+• Проверить работу подогрева сидений
+
+🌨️ **Сильный мороз (ниже -20°C):**
+• Прогрев на месте: 7-10 минут
+• Возможно использование автозапуска
+• Проверить аккумулятор перед запуском
+• Дать поработать печке для прогрева салона
+• После запуска дать поработать 1 минуту, затем тронуться
+
+🍂 **Осень/Весна (0°C до +10°C):**
+• Прогрев на месте: 1-2 минуты
+• Плавное начало движения
+• Избегать резких ускорений первые 3-5 км
+
+☀️ **Лето (выше +15°C):**
+• Достаточно 30-60 секунд
+• Можно начинать движение сразу, плавно набирая скорость
+• Следить за температурой ОЖ в пробках
+
+**Почему нельзя греть долго (более 10 мин):**
+• Повышенный расход топлива (до 2-3 л/ч на ХХ)
+• Разжижение масла топливом (особенно на GDI)
+• Увеличенный износ ЦПГ
+• Загрязнение катализатора
+• Вред экологии
+
+**Признаки готовности двигателя:**
+• Падение оборотов ХХ до нормы (650-750 об/мин)
+• Стрелка температуры начала подниматься
+• Печка дает теплый воздух (после прогрева)
+• Масло прогревается медленнее ОЖ (до рабочей температуры 90°C нужно проехать 5-10 км)`,
+
+                transmission: `📖 **Трансмиссия Kia Sorento 2012**
+
+**Типы трансмиссии:**
+• Передний привод (2WD)
+• Полный привод (4WD) - подключаемый
+
+**Коробки передач:**
+
+**6-ступенчатая автоматическая (A6MF1/2):**
+• Производитель: Hyundai Powertech
+• Масло: SP-IV (красное)
+• Объем: 7.8 литров (полная заправка)
+• Замена масла: каждые 60000 км (частичная), каждые 90000 км (полная с фильтром)
+• Фильтр АКПП: сменный, внутри поддона
+
+**6-ступенчатая механическая (M6CF1):**
+• Масло: 75W-90 (API GL-4)
+• Объем: 1.9 литра
+• Замена: каждые 60000 км
+
+**Раздаточная коробка (для 4WD):**
+• Масло: 75W-90 (API GL-5)
+• Объем: 0.8 литра
+• Замена: каждые 60000 км
+
+**Задний редуктор (для 4WD):**
+• Масло: 75W-90 (API GL-5)
+• Объем: 0.9 литра
+• Замена: каждые 60000 км
+
+**Признаки неисправностей АКПП:**
+• Рывки при переключении (1-2, 2-3)
+• Задержки при включении D или R
+• Шум при движении (вой, гул)
+• Вибрация при разгоне
+• Подтекания масла (сальники)
+• Пробуксовка (износ фрикционов)
+
+**Рекомендации:**
+• Прогревать АКПП зимой (1-2 минуты на месте, затем плавно)
+• Избегать буксировки тяжелых прицепов (перегрев)
+• При пробуксовках в грязи - отключить стабилизацию
+• Раз в год проверять уровень масла в АКПП
+• При замене масла обязательно менять фильтр
+• Использовать только оригинальное масло SP-IV`,
+
+                suspension: `📖 **Подвеска Kia Sorento 2012**
+
+**Тип подвески:**
+• Передняя: независимая, типа McPherson
+• Задняя: многорычажная (независимая)
+
+**Регламент обслуживания:**
+
+**Каждые 15000 км:**
+• Проверка состояния амортизаторов (на предмет подтеков)
+• Проверка пыльников и втулок стабилизатора
+• Диагностика шаровых опор
+• Проверка рулевых наконечников
+
+**Каждые 30000 км:**
+• Проверка сход-развала
+• Диагностика сайлентблоков рычагов
+• Проверка ступичных подшипников
+
+**Ресурс элементов:**
+• Амортизаторы передние: 80000-100000 км
+• Амортизаторы задние: 100000-120000 км
+• Шаровые опоры: 80000-100000 км (в сборе с рычагом)
+• Рулевые наконечники: 60000-80000 км
+• Сайлентблоки передних рычагов: 80000-100000 км
+• Сайлентблоки задней балки: 100000-120000 км
+• Втулки стабилизатора: 30000-50000 км
+• Стойки стабилизатора: 40000-60000 км
+• Ступичные подшипники: 120000-150000 км
+
+**Признаки неисправностей:**
+• Стуки при проезде неровностей (стойки/втулки стаба, шаровые)
+• Крены в поворотах (амортизаторы)
+• Увод автомобиля в сторону (сход-развал, сайлентблоки)
+• Вибрация на руле (балансировка, наконечники)
+• Раскачка после проезда неровностей (амортизаторы)
+
+**Рекомендации:**
+• Раз в год делать сход-развал (или после замены элементов)
+• Проверять состояние пыльников ШРУСов
+• При замене амортизаторов менять парой (на одной оси)
+• Зимой промывать подвеску от реагентов
+• Избегать езды по глубоким ямам`,
+
+                tires: `📖 **Шины и колеса Kia Sorento 2012**
+
+**Рекомендуемые размеры:**
+
+**Стандартные:**
+• 235/65 R17 (для базовых комплектаций)
+• 235/60 R18 (для люксовых комплектаций)
+• 235/55 R19 (для максимальных комплектаций)
+
+**Давление:**
+• Передние: 2.3 атм (33 psi)
+• Задние: 2.3 атм (33 psi)
+• При полной загрузке: 2.5 атм (36 psi)
+
+**Сезонность:**
+
+🌞 **Летние шины:**
+• Минимальный остаток протектора: 2 мм
+• Оптимальный: 4-6 мм
+• Температура выше +5°C
+• Рекомендуемые модели: Michelin Latitude Tour, Continental CrossContact, Pirelli Scorpion
+
+❄️ **Зимние шины:**
+• Минимальный остаток протектора: 4 мм
+• Оптимальный: 6-8 мм
+• Температура ниже +5°C
+• Шипы или липучка - по условиям эксплуатации
+• Рекомендуемые модели: Nokian Hakkapeliitta, Continental ContiViking, Michelin X-Ice
+
+**Балансировка и сход-развал:**
+• Балансировка: каждые 10000 км или при вибрации
+• Сход-развал: после сезонной смены или при неравномерном износе
+• Переобувка: весна/осень при стабильной температуре
+
+**Хранение шин:**
+• В сухом прохладном месте
+• В вертикальном положении (если без дисков)
+• В горизонтальном (на дисках)
+• Вдали от прямых солнечных лучей
+• Давление 1.5 атм при хранении
+
+**Признаки износа:**
+• Неравномерный износ (проблемы сход-развала)
+• Износ по краям (низкое давление)
+• Износ в центре (высокое давление)
+• Потертости (агрессивный стиль вождения)
+
+**Запасное колесо:**
+• Проверять давление раз в полгода
+• Место крепления: под полом багажника (для Sorento)
+• Размер: полноразмерное или докатка`,
+
+                brakes: `📖 **Тормозная система Kia Sorento 2012**
+
+**Состав системы:**
+• Передние тормоза: вентилируемые диски, 2-поршневые суппорта
+• Задние тормоза: вентилируемые диски, 1-поршневые суппорта (или барабаны в базовых версиях)
+• Системы: ABS, EBD, BAS
+
+**Регламент замены:**
+
+**Передние колодки:**
+• Ресурс: 25000 - 35000 км
+• Минимальная толщина: 3 мм
+• Датчик износа: акустический (скрип при износе)
+
+**Задние колодки:**
+• Ресурс: 35000 - 45000 км
+• Минимальная толщина: 3 мм
+• Для версий с электронным стояночным тормозом - компьютерная диагностика при замене
+
+**Тормозные диски:**
+• Ресурс передних: 60000 - 80000 км
+• Ресурс задних: 80000 - 100000 км
+• Минимальная толщина: указана на диске (обычно 2-3 мм от номинала)
+• Биение: не более 0.05 мм
+
+**Тормозная жидкость:**
+• Тип: DOT-4
+• Объем: примерно 1 литр
+• Замена: каждые 2 года или 40000 км
+• Температура кипения: не менее 230°C (сухая), 155°C (увлажненная)
+
+**Признаки износа:**
+• Писк при торможении (износ колодок)
+• Вибрация на руле при торможении (биение дисков)
+• Вибрация кузова (задние диски)
+• Увеличение тормозного пути
+• Мягкая педаль (воздух в системе)
+• Подтекания жидкости
+• Свист ABS при резком торможении (норма)
+
+**Рекомендации:**
+• После замены колодок притирать 300 км (без резких торможений)
+• Не перегревать тормоза (длительные спуски - тормозить двигателем)
+• Мыть суппорта зимой от реагентов
+• Проверять направляющие суппортов (смазывать при замене колодок)
+• При замене дисков обязательно менять колодки`,
+
+                cooling: `📖 **Система охлаждения Kia Sorento 2.4L**
+
+**Характеристики:**
+• Тип антифриза: на основе этиленгликоля, зеленого или синего цвета
+• Оригинал: Kia/Hyundai Long Life Coolant (синий/зеленый)
+• Объем: 7.5 - 8.0 литров (зависит от комплектации)
+• Интервал замены: 60000 км или 4 года
+
+**Компоненты:**
+• Радиатор: алюминиевый, горизонтальный поток
+• Вентилятор: электрический, с электронным управлением (1 или 2 вентилятора)
+• Помпа: с механическим приводом от ремня ГРМ (цепь ГРМ - помпа отдельно)
+• Термостат: 82°C (открытие), полностью открыт при 95°C
+• Расширительный бачок: с датчиком уровня
+
+**Проверки:**
+
+**Еженедельно:**
+• Уровень в расширительном бачке (между MIN и MAX)
+• Визуальный осмотр на подтеки
+
+**Каждые 15000 км:**
+• Проверка состояния патрубков на трещины
+• Состояние хомутов
+• Работа вентилятора (включается при 95-100°C)
+
+**Каждые 30000 км:**
+• Проверка плотности антифриза (ареометром)
+• Осмотр радиатора на загрязнения
+• Чистка радиатора от пуха и грязи (продувка сжатым воздухом)
+• Проверка помпы на подтеки
+
+**Признаки неисправностей:**
+• Перегрев двигателя (стрелка в красную зону)
+• Подтекания антифриза (розовые/зеленые лужи)
+• Запах антифриза в салоне (печка)
+• Масло в расширительном бачке (прокладка ГБЦ)
+• Слабый поток печки (засор радиатора отопителя)
+• Частое включение вентилятора (возможно, завоздушивание)
+
+**Рекомендации:**
+• Не смешивать разные типы антифриза (зеленый с красным - нельзя)
+• Доливать только той же марки и цвета
+• При перегреве сразу остановиться и заглушить двигатель
+• Зимой проверять концентрацию (должна быть до -35°C)
+• При замене антифриза промывать систему дистиллированной водой`,
+
+                electrics: `📖 **Электрика Kia Sorento 2012**
+
+**Аккумулятор:**
+• Тип: MF (необслуживаемый) или AGM (для версий с Start/Stop)
+• Емкость: 60-80 Ач (зависит от комплектации)
+• Пусковой ток: 550-700 А
+• Замена: каждые 4-5 лет
+• Проверка: каждые 15000 км (плотность, напряжение)
+
+**Генератор:**
+• Мощность: 130-150 А (зависит от комплектации)
+• Ресурс: 150000 - 200000 км
+• Проверка: напряжение 13.8-14.4 В на заряженном АКБ
+• Регулятор напряжения: встроенный в генератор
+
+**Стартер:**
+• Мощность: 1.4-1.7 кВт
+• Ресурс: 100000 - 150000 км
+• Признаки износа: щелчки при запуске, медленный прокрут
+
+**Основные потребители:**
+• Фары: галогеновые H7 (55W) или ксенон (опционально)
+• Противотуманки: H11 или H8
+• Салонное освещение: LED (цоколь W5W)
+• Габариты: LED или лампы накаливания
+
+**Блоки предохранителей:**
+• Моторный отсек: основные предохранители и реле
+• Салон: под панелью приборов (со стороны водителя)
+
+**Частые проблемы:**
+• Разряд аккумулятора зимой (особенно при коротких поездках)
+• Окисление клемм (зеленый налет)
+• Перегорание ламп головного света (частые замены)
+• Сбои в блоке управления (требуется диагностика)
+• Проблемы с контактами в разъемах (коррозия)
+
+**Рекомендации:**
+• Раз в месяц проверять плотность аккумулятора (1.27-1.28 г/см³)
+• Чистить клеммы от окислов (специальной щеткой)
+• Не допускать глубокого разряда (менее 10.5 В)
+• При замене аккумулятора - регистрация в блоке (для версий с интеллектуальным зарядом)
+• Использовать только оригинальные предохранители
+
+**Признаки неисправностей:**
+• Тусклый свет фар (падение напряжения)
+• Медленный запуск (стартер или АКБ)
+• Мигание приборной панели (генератор)
+• Запах горелой проводки (короткое замыкание)
+• Посторонние звуки от генератора (подшипники)`,
+
+                timing: `📖 **Ремень/Цепь ГРМ Kia Sorento 2.4L**
+
+**Важно: На двигателе 2.4L (G4KE) установлена ЦЕПЬ ГРМ, а не ремень!**
+
+**Тип привода ГРМ:**
+• Цепь (однорядная, роликовая)
+• Производитель: Morse или BorgWarner
+• Ресурс: 150000 - 200000 км (в идеальных условиях)
+
+**Компоненты системы:**
+• Цепь ГРМ
+• Натяжитель цепи (гидравлический, масляный)
+• Успокоители (пластиковые, 3 шт)
+• Звездочки распредвалов (2 шт)
+• Звездочка коленвала
+
+**Особенности:**
+• Цепь работает в масляной ванне (смазывается моторным маслом)
+• Натяжение автоматическое (зависит от давления масла)
+• При запуске возможен кратковременный шум (до создания давления масла)
+
+**Признаки износа цепи:**
+• Дизельный стук при запуске на холодную (2-3 секунды)
+• Шум (треск, металлический звук) при работе двигателя
+• Плавающие обороты на ХХ
+• Ошибки по фазам газораспределения (P0016, P0017)
+• Падение мощности
+• Повышенный расход топлива
+
+**Причины износа:**
+• Низкое давление масла
+• Несвоевременная замена масла (растяжение)
+• Использование некачественного масла
+• Естественный износ (пробег более 150 тыс. км)
+
+**Рекомендации:**
+• Использовать качественное масло (API SN/SP)
+• Соблюдать интервалы замены масла (не более 7500 км)
+• При появлении шума цепи - срочная диагностика
+• Замена цепи производится в сборе с натяжителем и успокоителями
+• После замены цепи требуется синхронизация фаз ГРМ (сканером)
+
+**Регламент замены:**
+• Проверка состояния: при каждом ТО (прослушивание)
+• Замена: при появлении шума или при пробеге 150000-180000 км
+• Замена масла: влияет на ресурс цепи напрямую
+
+**Стоимость замены:**
+• Оригинальный комплект цепи: около 15000-20000 руб
+• Аналоги: 8000-12000 руб
+• Работа: от 15000 руб (сложная, требует специнструмента)`
+            };
+
+            function updateManualChapter(chapter) {
+                const content = document.getElementById('manualBookContent');
+                if (content) {
+                    content.innerHTML = manualChapters[chapter] || 'Нет данных';
+                }
+            }
+
+            document.querySelectorAll('.book-chapter').forEach(chapter => {
+                chapter.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.book-chapter').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    updateManualChapter(this.dataset.chapter);
+                });
+            });
+
+            // Активируем первую главу
+            updateManualChapter('engine');
+
+            // ========== ФИНАНСЫ ==========
+            function updateFinanceChart() {
+                let ctx = document.getElementById('financeChart').getContext('2d');
+                
+                let categories = ['fuel', 'repair', 'wash', 'insurance', 'other'];
+                let labels = ['Топливо', 'Ремонт', 'Мойка', 'Страховка', 'Другое'];
+                let data = categories.map(cat => 
+                    expenses.filter(e => e.type === cat).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+                );
+                
+                let colors = ['#3f6540', '#6f946c', '#b45f3a', '#7aa5b9', '#b9d7b0'];
+                
+                if (financeChart) {
+                    financeChart.destroy();
+                }
+
+                financeChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderWidth: 2,
+                            borderColor: 'white'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 12 } }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeInOutQuad'
+                        }
+                    }
+                });
+            }
+
+            function renderExpenses() {
+                let list = document.getElementById('expenseList');
+                if (!list) return;
+                
+                list.innerHTML = expenses.map((e, i) => {
+                    let typeLabels = {fuel:'⛽', repair:'🔧', wash:'🧼', insurance:'📄', other:'📌'};
+                    return `
+                        <div class="expense-item">
+                            <div>
+                                ${typeLabels[e.type] || '📌'} <strong>${e.desc || 'Без описания'}</strong>
+                                <div style="font-size:0.85rem;">${e.amount}₽ • пробег ${e.mileage} км</div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="deleteExpense(${i})" style="width:auto; padding:8px 12px;">✖</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            window.deleteExpense = function(i) {
+                expenses.splice(i, 1);
+                saveAll();
+                renderExpenses();
+                updateFinanceChart();
+            };
+
+            document.getElementById('showAddExpenseModal').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('expenseModal').classList.add('active');
+            });
+
+            document.getElementById('cancelExpense').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('expenseModal').classList.remove('active');
+            });
+
+            document.getElementById('saveExpense').addEventListener('click', function(e) {
+                e.preventDefault();
+                expenses.push({
+                    type: document.getElementById('expenseType').value,
+                    desc: document.getElementById('expenseDesc').value,
+                    amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
+                    mileage: parseInt(document.getElementById('expenseMileage').value) || carData.mileage
+                });
+                saveAll();
+                renderExpenses();
+                updateFinanceChart();
+                document.getElementById('expenseModal').classList.remove('active');
+                alert('Расход добавлен');
+            });
+
+            // ========== ИНИЦИАЛИЗАЦИЯ ==========
+            updateMaintenance();
+            updateMileageStats();
+            renderTrips();
+            renderWashes();
+            renderParts();
+            renderPeriods();
+            renderExpenses();
+            updateFinanceChart();
+        })();
+    </script>
+</body>
+</html>
